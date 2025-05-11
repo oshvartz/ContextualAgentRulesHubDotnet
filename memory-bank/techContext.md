@@ -10,10 +10,25 @@
 ### Project Structure
 ```
 src/AgentRulesHub/
+├── Interfaces/
+│   ├── IRuleLoader.cs
+│   ├── IRuleParser.cs
+│   ├── IRuleLoaderOrchestrator.cs
+│   └── IRuleRepository.cs
 ├── Models/
-│   ├── AgentRule.cs      # Main rule entity
-│   ├── RuleSource.cs     # Abstract base for sources
-│   └── FileSource.cs     # YAML file implementation
+│   ├── AgentRule.cs
+│   ├── RuleSource.cs
+│   ├── FileSource.cs
+│   ├── YamlRuleContent.cs
+│   └── RuleSourceOptions.cs
+├── Services/
+│   ├── YamlRuleParser.cs
+│   ├── YamlRuleLoader.cs
+│   ├── RuleLoaderOrchestrator.cs
+│   └── InMemoryRuleRepository.cs
+├── rules/                  # Example folder for rule files
+│   └── sample-rule.yaml
+└── Program.cs
 ```
 
 ## Development Setup
@@ -29,7 +44,8 @@ src/AgentRulesHub/
 
 ## Dependencies
 - .NET 8.0 Runtime
-- (Future) YAML parsing library to be added
+- YamlDotNet (for YAML parsing, implicitly used by `FileSource` and `YamlRuleParser`)
+- Microsoft.Extensions.DependencyInjection (used in `Program.cs` for DI setup)
 
 ## Tool Usage Patterns
 1. Source Control:

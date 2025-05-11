@@ -1,0 +1,15 @@
+id: sample001
+description: A sample rule for testing purposes.
+language: csharp
+tags:
+  - example
+  - test
+rule: |
+  // This is a sample C# rule content.
+  public class SampleRuleClass
+  {
+      public void Execute()
+      {
+          Console.WriteLine("Sample rule executed!");
+      }
+  }

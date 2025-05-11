@@ -33,7 +33,7 @@ public class FileSource : RuleSource
         var deserializer = new DeserializerBuilder()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .Build();
-        var yamlContent = deserializer.Deserialize<Dictionary<string,string>>(fileStream);
-        return Task.FromResult(yamlContent["rule"]);
+        var yamlContent = deserializer.Deserialize<Dictionary<string,object>>(fileStream);
+        return Task.FromResult((string)yamlContent["rule"]);
     }
 }
