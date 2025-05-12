@@ -10,6 +10,9 @@
 ### Project Structure
 ```
 src/AgentRulesHub/
+├── Configuration/          # New folder for configuration models
+│   ├── RuleSourceOptions.cs
+│   └── RuleSourcesOptions.cs
 ├── Interfaces/
 │   ├── IRuleLoader.cs
 │   ├── IRuleParser.cs
@@ -19,13 +22,13 @@ src/AgentRulesHub/
 │   ├── AgentRule.cs
 │   ├── RuleSource.cs
 │   ├── FileSource.cs
-│   ├── YamlRuleContent.cs
-│   └── RuleSourceOptions.cs
+│   └── YamlRuleContent.cs
 ├── Services/
 │   ├── YamlRuleParser.cs
 │   ├── YamlRuleLoader.cs
 │   ├── RuleLoaderOrchestrator.cs
-│   └── InMemoryRuleRepository.cs
+│   ├── InMemoryRuleRepository.cs
+│   └── RuleInitializationService.cs # New background service
 ├── rules/                  # Example folder for rule files
 │   └── sample-rule.yaml
 └── Program.cs
@@ -46,6 +49,9 @@ src/AgentRulesHub/
 - .NET 8.0 Runtime
 - YamlDotNet (for YAML parsing, implicitly used by `FileSource` and `YamlRuleParser`)
 - Microsoft.Extensions.DependencyInjection (used in `Program.cs` for DI setup)
+- Microsoft.Extensions.Hosting (used for `IHostedService` and `RuleInitializationService`)
+- Microsoft.Extensions.Logging (used by `RuleInitializationService`)
+- Microsoft.Extensions.Options.ConfigurationExtensions (for binding configuration)
 
 ## Tool Usage Patterns
 1. Source Control:
