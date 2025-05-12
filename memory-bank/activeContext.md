@@ -1,69 +1,50 @@
 # Active Context: AgentRulesHub
 
 ## Current Work Focus
-- Implemented background service for rule initialization.
-- Moved configuration-related models to a dedicated `Configuration` folder.
+- Implemented MCP server capabilities for AgentRulesHub.
 
 ## Recent Changes
-1.  **Created `RuleInitializationService`**: An `IHostedService` that uses `RuleLoaderOrchestrator` to load rules and initialize `InMemoryRuleRepository` on application startup.
-2.  **Updated `Program.cs`**:
-    *   Registered `RuleInitializationService` as a hosted service.
-    *   Removed manual rule loading logic, now handled by the background service.
-    *   Updated `using` statements for moved configuration models.
-3.  **Moved Configuration Models**:
-    *   `RuleSourceOptions.cs` moved from `Models/` to `Configuration/`.
-    *   `RuleSourcesOptions.cs` moved from `Models/` to `Configuration/`.
-    *   Namespaces updated accordingly in these files and their usages.
-4.  **Previous**: Implemented loading `RuleSourceOptions` from `appsettings.json`.
-5.  **Previous**: Ensured rule content (actual script/text) is loaded on-demand.
-6.  **Previous**: Created `RuleSourcesOptions` model (now in `Configuration` folder).
-7.  **Previous**: Created `appsettings.json`.
-8.  **Previous**: Updated `Program.cs` for configuration binding.
-9.  **Previous**: Updated `AgentRulesHub.csproj` for configuration packages and file copying.
-10. **Previous**: Created `RuleSourceOptions` model (now in `Configuration` folder).
-11. **Previous**: Created `IRuleLoaderOrchestrator` interface and `RuleLoaderOrchestrator` service.
-12. **Previous**: Updated `IRuleLoader` interface and `YamlRuleLoader`.
-13. **Previous**: Added `CanHandle(string loaderType)` method to `IRuleLoader`.
-14. **Previous**: Implemented `CanHandle` in `YamlRuleLoader`.
-15. **Previous**: Updated `RuleLoaderOrchestrator` to use `CanHandle`.
-16. **Previous**: Created `IRuleRepository` interface and `InMemoryRuleRepository` service.
-17. **Previous**: Added `sample-rule.yaml`.
-18. **Confirmed `AgentRule` does not store rule content**: The `Source` property (`FileSource`) handles on-demand loading.
+1.  **Added MCP Server Functionality**:
+    *   Added `ModelContextProtocol` NuGet package to `AgentRulesHub.csproj`.
+    *   Created `src/AgentRulesHub/Mcp/RuleProviderTools.cs` with two tools:
+        *   `GetRulesByLanguageAsync(string language, IRuleRepository ruleRepository)`: Retrieves rule metadata by language.
+        *   `GetRuleContentByIdAsync(string ruleId, IRuleRepository ruleRepository)`: Retrieves rule content by ID.
+    *   Methods in `RuleProviderTools` use `[FromServices]` attribute for `IRuleRepository` injection.
+2.  **Updated `Program.cs` for MCP Hosting**:
+    *   Configured MCP logging to `stderr`.
+    *   Registered MCP server services using `AddMcpServer()`, `WithStdioServerTransport()`, and `WithToolsFromAssembly()`.
+    *   Removed previous console demonstration logic.
+    *   Application now runs as a persistent server using `await builder.Build().RunAsync();`.
+3.  **Previous**: Implemented background service for rule initialization (`RuleInitializationService`).
+4.  **Previous**: Moved configuration-related models to a dedicated `Configuration` folder.
+5.  **Previous**: Implemented loading `RuleSourceOptions` from `appsettings.json`.
+6.  **Previous**: Ensured rule content (actual script/text) is loaded on-demand.
 
 ## Active Decisions
-1.  **Rule Initialization**: Rules are now initialized at application startup via the `RuleInitializationService` background service.
-2.  **Configuration Model Location**: `RuleSourceOptions` and `RuleSourcesOptions` are now located in the `AgentRulesHub.Configuration` namespace and `Configuration/` folder.
-3.  **Configuration Source**: Rule source configurations are still managed in `appsettings.json`.
-4.  **Path Handling**: Paths in `appsettings.json` remain relative and are resolved by the application.
-5.  **Rule Content Loading**: Remains on-demand.
-6.  **Loader Configuration and Selection**: `RuleSourceOptions` (from `Configuration` namespace) is used.
-7.  **Error Handling**: `RuleInitializationService` includes basic error logging. Further refinement is a next step.
-8.  **Repository Storage**: `InMemoryRuleRepository` continues to use `ConcurrentDictionary`.
+1.  **MCP Tool Implementation**: Tools are static methods in `RuleProviderTools` class, using `[McpServerToolType]` and `[McpServerTool]` attributes. `IRuleRepository` is injected via `[FromServices]`.
+2.  **MCP Hosting**: Using .NET Generic Host with `StdioServerTransport`. Tools are discovered from the assembly.
+3.  **Rule Initialization**: Continues to be handled by `RuleInitializationService` at startup.
+4.  **Configuration Model Location**: `RuleSourceOptions` and `RuleSourcesOptions` remain in `AgentRulesHub.Configuration`.
+5.  **Configuration Source**: Rule source configurations are still managed in `appsettings.json`.
 
 ## Project Insights
-- Background service initialization simplifies `Program.cs` and ensures rules are ready early.
-- Dedicated `Configuration` folder improves project organization.
-- The system remains robust and flexible.
+- The existing architecture of AgentRulesHub (DI, service separation) facilitated a smooth integration of MCP server capabilities.
+- The `ModelContextProtocol` library provides a straightforward way to expose C# methods as tools.
 
 ## Next Steps
-1.  **Unit Tests**: Add comprehensive unit tests for:
-    *   `RuleInitializationService`.
-    *   Configuration loading in `Program.cs`.
-    *   `YamlRuleParser`.
-    *   `YamlRuleLoader`.
-    *   `RuleLoaderOrchestrator`.
-    *   `InMemoryRuleRepository`.
-    *   `FileSource`.
-2.  **Refine Error Handling/Logging**: Implement more robust logging (e.g., using `ILogger` consistently) throughout, especially in `RuleInitializationService`.
-3.  **Advanced Repository Features**: Consider adding more advanced querying capabilities to `IRuleRepository`.
-4.  **Documentation**: Ensure all public APIs are well-documented with XML comments.
+1.  **Update Memory Bank**:
+    *   `systemPatterns.md`: Add MCP Server pattern.
+    *   `techContext.md`: Update dependencies and project structure.
+    *   `progress.md`: Reflect MCP server implementation.
+2.  **Testing**:
+    *   Manually test the MCP server by sending tool requests (outside the scope of this agent's direct actions, but a logical next step for the user).
+    *   Add unit tests for `RuleProviderTools` methods (mocking `IRuleRepository`).
+3.  **Refine Error Handling/Logging**: Ensure robust logging within MCP tools if complex logic were added.
+4.  **Documentation**: Ensure MCP tools are well-described using the `Description` attribute.
 
 ## Important Patterns and Preferences
 1.  **Code Organization**:
-    *   Clear separation into `Interfaces`, `Models`, `Services`, and `Configuration` namespaces/folders.
-    *   Dependency Injection is used for service resolution, including `IHostedService`.
+    *   MCP-specific code (e.g., `RuleProviderTools.cs`) is placed in a dedicated `Mcp` sub-namespace/folder.
+    *   DI is leveraged for MCP tool dependencies.
 2.  **Coding Standards**:
-    *   Use of nullable reference types.
-    *   Asynchronous programming (`async`/`await`) for I/O-bound operations.
-    *   Defensive programming (null checks, argument validation).
-    *   Favoring interfaces for service contracts.
+    *   Consistent use of `async`/`await` for I/O-bound operations in tools.

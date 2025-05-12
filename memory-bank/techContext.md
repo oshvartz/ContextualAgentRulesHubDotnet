@@ -23,6 +23,8 @@ src/AgentRulesHub/
 │   ├── RuleSource.cs
 │   ├── FileSource.cs
 │   └── YamlRuleContent.cs
+├── Mcp/                    # New folder for MCP tools
+│   └── RuleProviderTools.cs
 ├── Services/
 │   ├── YamlRuleParser.cs
 │   ├── YamlRuleLoader.cs
@@ -48,10 +50,11 @@ src/AgentRulesHub/
 ## Dependencies
 - .NET 8.0 Runtime
 - YamlDotNet (for YAML parsing, implicitly used by `FileSource` and `YamlRuleParser`)
-- Microsoft.Extensions.DependencyInjection (used in `Program.cs` for DI setup)
-- Microsoft.Extensions.Hosting (used for `IHostedService` and `RuleInitializationService`)
-- Microsoft.Extensions.Logging (used by `RuleInitializationService`)
+- Microsoft.Extensions.DependencyInjection (used in `Program.cs` for DI setup, and by MCP framework)
+- Microsoft.Extensions.Hosting (used for `IHostedService`, `RuleInitializationService`, and MCP server hosting)
+- Microsoft.Extensions.Logging (used by `RuleInitializationService` and MCP server logging)
 - Microsoft.Extensions.Options.ConfigurationExtensions (for binding configuration)
+- ModelContextProtocol (for MCP server functionality)
 
 ## Tool Usage Patterns
 1. Source Control:

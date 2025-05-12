@@ -23,9 +23,14 @@
     *   `appsettings.json` created and configured for rule sources ✅
     *   `Program.cs` updated to load rule configurations from `appsettings.json` ✅
     *   `.csproj` updated with configuration NuGet packages and file copy settings ✅
-6.  **Demonstration**:
-    *   `Program.cs` updated to showcase DI setup, configuration-based rule loading, storage in repository, and on-demand content retrieval ✅
+6.  **MCP Server Implementation**:
+    *   Added `ModelContextProtocol` NuGet package ✅
+    *   Created `RuleProviderTools.cs` with `GetRulesByLanguageAsync` and `GetRuleContentByIdAsync` methods ✅
+    *   Updated `Program.cs` to host MCP server using `StdioServerTransport` and `WithToolsFromAssembly` ✅
+    *   Removed console demonstration logic from `Program.cs` ✅
+7.  **Demonstration**:
     *   Sample rule file (`sample-rule.yaml`) created ✅
+    *   (MCP server functionality replaces previous console demonstration)
 
 ## Project Evolution
 ### Phase 1: Data Model & Basic Parsing Foundation
@@ -49,27 +54,36 @@
 - Created example rule YAML file (`sample-rule.yaml`) ✅
 - Updated memory bank documentation ✅
 
-### Phase 3: Testing & Refinements (Pending)
-- [ ] Unit tests for all new and existing components (including configuration loading)
-- [ ] Refine error handling and logging (replace `Console.WriteLine` with `ILogger`)
-- [ ] Add XML documentation comments to public APIs
+### Phase 3: MCP Server Integration (Completed)
+- Integrated `ModelContextProtocol` for MCP server capabilities ✅
+- Exposed rule retrieval via MCP tools ✅
+- Updated `Program.cs` to run as a persistent MCP server ✅
+- Updated memory bank documentation for MCP changes ✅
 
-### Phase 4: Future Enhancements (Planned)
+### Phase 4: Testing & Refinements (Pending)
+- [ ] Unit tests for all new and existing components (including configuration loading and MCP Tools)
+- [ ] Refine error handling and logging (MCP server now uses `Microsoft.Extensions.Logging` to stderr, review if further refinement needed)
+- [ ] Add XML documentation comments to public APIs (MCP tool descriptions are present)
+
+### Phase 5: Future Enhancements (Planned)
 - [ ] Additional source types (e.g., DatabaseRuleLoader)
 - [ ] Rule validation mechanisms
 - [ ] Advanced filtering capabilities in `IRuleRepository`
 - [ ] Performance optimizations if necessary
 
 ## Known Issues
-- Logging is currently done via `Console.WriteLine`; should be replaced with a proper logging framework.
+- Logging in `Program.cs` (for MCP server) now uses `Microsoft.Extensions.Logging` directed to stderr. Previous `Console.WriteLine` for demonstration is removed.
 
 ## Current Status
-- Rule loading orchestrator and in-memory repository for metadata are implemented and functional.
-- Rule sources are now configurable via `appsettings.json`.
-- Rule content is loaded on-demand as required.
-- Basic DI and application flow demonstrated in `Program.cs`.
-- System is extensible for new rule loader types.
-- Ready for comprehensive testing and further refinements.
+- AgentRulesHub now functions as an MCP server.
+- Rules are loaded at startup via `RuleInitializationService`.
+- Rule metadata and content can be queried via MCP tools:
+    - `GetRulesByLanguageAsync`
+    - `GetRuleContentByIdAsync`
+- Rule sources remain configurable via `appsettings.json`.
+- Rule content is loaded on-demand.
+- System is extensible for new rule loader types and potentially new MCP tools.
+- Ready for testing of MCP server functionality and further refinements.
 
 ## Project Decisions
 1.  **Initial Decisions**:
