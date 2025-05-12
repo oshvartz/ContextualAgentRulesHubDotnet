@@ -19,6 +19,11 @@ public class YamlRuleLoader : IRuleLoader
         _ruleParser = ruleParser ?? throw new ArgumentNullException(nameof(ruleParser));
     }
 
+    public bool CanHandle(string loaderType)
+    {
+        return !string.IsNullOrWhiteSpace(loaderType) && loaderType.Equals(LoaderType, StringComparison.OrdinalIgnoreCase);
+    }
+
     public async Task<IEnumerable<AgentRule>> LoadRulesAsync(RuleSourceOptions options, CancellationToken cancellationToken = default)
     {
         if (options == null)

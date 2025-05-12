@@ -7,5 +7,5 @@ namespace AgentRulesHub.Interfaces;
 
 public interface IRuleLoaderOrchestrator
 {
-    Task<IEnumerable<AgentRule>> LoadRulesAsync(IEnumerable<RuleSourceOptions> sourcesOptions, CancellationToken cancellationToken = default);
+    Task<IEnumerable<AgentRule>> LoadRulesAsync(CancellationToken cancellationToken = default);
 }

@@ -28,10 +28,15 @@ classDiagram
         +Dictionary~string,object~ Settings
     }
 
+    class RuleSourcesOptions {
+        +List~RuleSourceOptions~ Sources
+    }
+
     class IRuleLoader {
         <<interface>>
         +string LoaderType
-        +LoadRulesAsync(options) Task~IEnumerable~AgentRule~~
+        +CanHandle(loaderType string) bool
+        +LoadRulesAsync(options RuleSourceOptions) Task~IEnumerable~AgentRule~~
     }
     class YamlRuleLoader {
         +string LoaderType {"YamlFile"}
@@ -61,6 +66,7 @@ classDiagram
     IRuleLoaderOrchestrator <|.. RuleLoaderOrchestrator
     RuleLoaderOrchestrator o--> IRuleLoader : uses
     RuleLoaderOrchestrator ..> RuleSourceOptions : uses
+    RuleSourcesOptions o--> RuleSourceOptions : contains list of
     IRuleLoader <|.. YamlRuleLoader
     YamlRuleLoader ..> IRuleParser : uses
 
@@ -75,10 +81,13 @@ classDiagram
 - **Mechanism**:
     - `IRuleLoaderOrchestrator` defines the contract for orchestration.
     - `RuleLoaderOrchestrator` implements this, taking a collection of `IRuleLoader` instances.
-    - `RuleSourceOptions` provides configuration for each source, specifying `LoaderType` and loader-specific `Settings`.
-    - The orchestrator selects the appropriate `IRuleLoader` based on `LoaderType` from `RuleSourceOptions` and delegates rule loading to it.
+    - `RuleSourcesOptions` (plural) is a configuration model, typically bound from `appsettings.json`, containing a list of `RuleSourceOptions` (singular).
+    - Each `RuleSourceOptions` provides configuration for a specific source, specifying `LoaderType` and loader-specific `Settings`.
+    - The orchestrator iterates through the `List<RuleSourceOptions>` and, for each, selects the appropriate `IRuleLoader` by calling its `CanHandle(options.LoaderType)` method, then delegates rule loading to it.
 - **Benefits**:
+    - Rule source configurations are externalized to `appsettings.json`, improving maintainability.
     - Decouples rule loading logic from specific loader implementations.
+    - Provides a robust mechanism for loader selection using `CanHandle`.
     - Allows easy addition of new rule sources (e.g., database, different file types) by creating new `IRuleLoader` implementations without modifying the orchestrator.
     - Centralizes the process of loading rules from multiple, potentially varied, sources.
 
@@ -121,13 +130,14 @@ classDiagram
 2.  **RuleSource**: Abstract base for different types of rule content sources. `FileSource` is an implementation.
 3.  **YamlRuleContent**: DTO for deserializing YAML file content, including the rule text.
 4.  **IRuleParser (`YamlRuleParser`)**: Responsible for parsing a rule file (e.g., YAML) into an `AgentRule` object (metadata only, with `FileSource` pointing to the origin).
-5.  **IRuleLoader (`YamlRuleLoader`)**: Responsible for discovering rule files in a given location (e.g., folder) and using `IRuleParser` to parse each one. It now takes `RuleSourceOptions`.
-6.  **RuleSourceOptions**: Configuration object specifying the `LoaderType` (e.g., "YamlFile") and loader-specific `Settings` (e.g., "Path" for `YamlRuleLoader`).
-7.  **IRuleLoaderOrchestrator (`RuleLoaderOrchestrator`)**: Manages multiple `IRuleLoader` instances. It uses `RuleSourceOptions` to select the correct loader and initiate the loading process for configured sources.
-8.  **IRuleRepository (`InMemoryRuleRepository`)**: Stores the `AgentRule` metadata loaded by the orchestrator. Provides methods for adding and retrieving rules.
+5.  **IRuleLoader (`YamlRuleLoader`)**: Has a `LoaderType` property and a `CanHandle(string loaderType)` method. Responsible for discovering rule files in a given location (e.g., folder) and using `IRuleParser` to parse each one. It takes an individual `RuleSourceOptions`.
+6.  **RuleSourceOptions**: Configuration object for a single rule source, specifying the `LoaderType` (e.g., "YamlFile") and loader-specific `Settings` (e.g., "Path" for `YamlRuleLoader`). Instances of this are typically part of `RuleSourcesOptions`.
+7.  **RuleSourcesOptions**: A container model, typically bound from `appsettings.json` (e.g., from a "RuleSources" section). It holds a `List<RuleSourceOptions>` representing all configured rule sources.
+8.  **IRuleLoaderOrchestrator (`RuleLoaderOrchestrator`)**: Manages multiple `IRuleLoader` instances. It receives a `List<RuleSourceOptions>` (obtained from `RuleSourcesOptions` after configuration binding in `Program.cs`). For each `RuleSourceOptions` in the list, it uses `options.LoaderType` by calling `loader.CanHandle(options.LoaderType)` on available loaders to select the correct one and initiate the loading process.
+9.  **IRuleRepository (`InMemoryRuleRepository`)**: Stores the `AgentRule` metadata loaded by the orchestrator. Provides methods for adding and retrieving rules.
 
 ## Critical Implementation Paths
 1.  **Rule Metadata Loading**:
-    `RuleSourceOptions` -> `RuleLoaderOrchestrator` -> (selects) `IRuleLoader` (e.g., `YamlRuleLoader`) -> `IRuleParser` (e.g., `YamlRuleParser`) -> `AgentRule` (metadata + `FileSource`) -> `IRuleRepository`.
+    `appsettings.json` -> `IConfiguration` -> `RuleSourcesOptions` (binding) -> `List<RuleSourceOptions>` -> `RuleLoaderOrchestrator` -> (for each `RuleSourceOptions`, selects using `IRuleLoader.CanHandle(options.LoaderType)`) `IRuleLoader` (e.g., `YamlRuleLoader`) -> `IRuleParser` (e.g., `YamlRuleParser`) -> `AgentRule` (metadata + `FileSource`) -> `IRuleRepository`.
 2.  **Rule Content Retrieval (On-Demand)**:
     Client requests rule from `IRuleRepository` -> Gets `AgentRule` -> Calls `agentRule.Source.GetRuleContentAsync()` -> `FileSource.GetRuleContentAsync()` reads and deserializes the specific rule content from the YAML file.

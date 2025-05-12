@@ -1,7 +1,9 @@
 ﻿using AgentRulesHub.Interfaces;
 using AgentRulesHub.Models;
 using AgentRulesHub.Services;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,48 +14,33 @@ public class Program
 {
     public static async Task Main(string[] args)
     {
-        // Setup dependency injection
-        var services = new ServiceCollection();
+        var builder = Host.CreateApplicationBuilder();
+        builder.Configuration.SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+
+        builder.Services.AddOptions<RuleSourcesOptions>()
+          .BindConfiguration(nameof(RuleSourcesOptions.SectionName))
+          .ValidateDataAnnotations()
+          .ValidateOnStart();
 
         // Register individual rule loaders
-        services.AddSingleton<IRuleParser, YamlRuleParser>();
-        services.AddSingleton<IRuleLoader, YamlRuleLoader>(); // YamlRuleLoader now implements IRuleLoader
+        builder.Services.AddSingleton<IRuleParser, YamlRuleParser>();
+        builder.Services.AddSingleton<IRuleLoader, YamlRuleLoader>(); // YamlRuleLoader now implements IRuleLoader
 
-        // Register all IRuleLoader implementations for the orchestrator
-        // This allows the orchestrator to discover all available loaders.
-        // For this example, we only have YamlRuleLoader.
-        services.AddSingleton<IRuleLoaderOrchestrator>(sp =>
-        {
-            var allLoaders = sp.GetServices<IRuleLoader>();
-            return new RuleLoaderOrchestrator(allLoaders);
-        });
+        builder.Services.AddSingleton<IRuleLoaderOrchestrator, RuleLoaderOrchestrator>();
 
-        services.AddSingleton<IRuleRepository, InMemoryRuleRepository>();
+        builder.Services.AddSingleton<IRuleRepository, InMemoryRuleRepository>();
 
-        var serviceProvider = services.BuildServiceProvider();
+        var host = builder.Build();
 
         // --- Orchestrator and Repository Usage Example ---
-        var orchestrator = serviceProvider.GetRequiredService<IRuleLoaderOrchestrator>();
-        var repository = serviceProvider.GetRequiredService<IRuleRepository>();
-
-        // Define rule source configurations
-        var ruleSources = new List<RuleSourceOptions>
-        {
-            new RuleSourceOptions
-            {
-                LoaderType = "YamlFile", // This must match YamlRuleLoader.LoaderType
-                Settings = new Dictionary<string, object>
-                {
-                    { "Path", "C:\\git\\AgentRules" } // Relative path to the rules folder
-                }
-            }
-            // Add other RuleSourceOptions here for different loaders or paths
-        };
+        var orchestrator = host.Services.GetRequiredService<IRuleLoaderOrchestrator>();
+        var repository = host.Services.GetRequiredService<IRuleRepository>();
 
         Console.WriteLine("Loading rules using orchestrator...");
         try
         {
-            var loadedRules = await orchestrator.LoadRulesAsync(ruleSources);
+            var loadedRules = await orchestrator.LoadRulesAsync();
             await repository.AddRulesAsync(loadedRules);
 
             Console.WriteLine($"Successfully loaded {loadedRules.Count()} rules into the repository.");
