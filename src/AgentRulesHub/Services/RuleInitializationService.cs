@@ -11,12 +11,12 @@ namespace AgentRulesHub.Services
     public class RuleInitializationService : IHostedService
     {
         private readonly IRuleLoaderOrchestrator _ruleLoaderOrchestrator;
-        private readonly IRuleRepository _ruleRepository;
+        private readonly IRuleMetadataIndexRepository _ruleRepository;
         private readonly ILogger<RuleInitializationService> _logger;
 
         public RuleInitializationService(
             IRuleLoaderOrchestrator ruleLoaderOrchestrator,
-            IRuleRepository ruleRepository,
+            IRuleMetadataIndexRepository ruleRepository,
             ILogger<RuleInitializationService> logger)
         {
             _ruleLoaderOrchestrator = ruleLoaderOrchestrator ?? throw new ArgumentNullException(nameof(ruleLoaderOrchestrator));
@@ -33,7 +33,7 @@ namespace AgentRulesHub.Services
                 var loadedRules = await _ruleLoaderOrchestrator.LoadRulesAsync();
                 if (loadedRules != null && loadedRules.Any())
                 {
-                    await _ruleRepository.AddRulesAsync(loadedRules);
+                    await _ruleRepository.AddRulesMetadataAsync(loadedRules);
                     _logger.LogInformation($"Successfully loaded {loadedRules.Count()} rules into the repository via background service.");
                 }
                 else

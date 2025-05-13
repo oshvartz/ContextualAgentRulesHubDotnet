@@ -9,11 +9,11 @@ using System.Threading.Tasks;
 
 namespace AgentRulesHub.Services;
 
-public class InMemoryRuleRepository : IRuleRepository
+public class InMemoryRuleRepository : IRuleMetadataIndexRepository
 {
     private readonly ConcurrentDictionary<string, AgentRule> _rules = new();
 
-    public Task AddRuleAsync(AgentRule rule, CancellationToken cancellationToken = default)
+    public Task AddRuleMetadataAsync(AgentRule rule, CancellationToken cancellationToken = default)
     {
         if (rule == null)
         {
@@ -28,7 +28,7 @@ public class InMemoryRuleRepository : IRuleRepository
         return Task.CompletedTask;
     }
 
-    public Task AddRulesAsync(IEnumerable<AgentRule> rules, CancellationToken cancellationToken = default)
+    public Task AddRulesMetadataAsync(IEnumerable<AgentRule> rules, CancellationToken cancellationToken = default)
     {
         if (rules == null)
         {
@@ -58,7 +58,7 @@ public class InMemoryRuleRepository : IRuleRepository
         return Task.CompletedTask;
     }
 
-    public Task<AgentRule?> GetRuleByIdAsync(string ruleId, CancellationToken cancellationToken = default)
+    public Task<AgentRule?> GetRuleMetadataByIdAsync(string ruleId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(ruleId))
         {
@@ -69,7 +69,7 @@ public class InMemoryRuleRepository : IRuleRepository
         return Task.FromResult(rule);
     }
 
-    public Task<IEnumerable<AgentRule>> GetAllRulesAsync(CancellationToken cancellationToken = default)
+    public Task<IEnumerable<AgentRule>> GetAllRulesMetadataAsync(CancellationToken cancellationToken = default)
     {
         // Returning a snapshot to prevent modification of the internal collection
         return Task.FromResult(_rules.Values.ToList().AsEnumerable());

@@ -52,11 +52,11 @@ classDiagram
         -IEnumerable~IRuleLoader~ _loaders
     }
 
-    class IRuleRepository {
+    class IRuleMetadataIndexRepository {
         <<interface>>
-        +AddRulesAsync(rules)
-        +GetRuleByIdAsync(ruleId) AgentRule
-        +GetAllRulesAsync() IEnumerable~AgentRule~
+        +AddRulesMetadataAsync(rules)
+        +GetRuleMetadataByIdAsync(ruleId) AgentRule
+        +GetAllRulesMetadataAsync() IEnumerable~AgentRule~
     }
     class InMemoryRuleRepository {
         -ConcurrentDictionary~string,AgentRule~ _rules
@@ -72,26 +72,26 @@ classDiagram
     IRuleLoader <|.. YamlRuleLoader
     YamlRuleLoader ..> IRuleParser : uses
 
-    IRuleRepository <|.. InMemoryRuleRepository
+    IRuleMetadataIndexRepository <|.. InMemoryRuleRepository
 
     class IHostedService {
         <<interface>>
     }
     class RuleInitializationService {
         -IRuleLoaderOrchestrator _orchestrator
-        -IRuleRepository _repository
+        -IRuleMetadataIndexRepository _repository
     }
     IHostedService <|.. RuleInitializationService
     RuleInitializationService o--> IRuleLoaderOrchestrator : uses
-    RuleInitializationService o--> IRuleRepository : uses
+    RuleInitializationService o--> IRuleMetadataIndexRepository : uses
 
     namespace Mcp {
         class RuleProviderTools {
-            +GetRulesByLanguageAsync(language, IRuleRepository) Task~IEnumerable~AgentRule~~
-            +GetRuleContentByIdAsync(ruleId, IRuleRepository) Task~string?~
+            +GetRuleContentByIdAsync(ruleId, IRuleMetadataIndexRepository) Task~string?~
+            +GetAllRulesMetadataAsync(IRuleMetadataIndexRepository) Task~IEnumerable~AgentRule~~
         }
     }
-    RuleProviderTools o--> IRuleRepository : uses
+    RuleProviderTools o--> IRuleMetadataIndexRepository : uses
 
     class McpServerFramework {
         +AddMcpServer()
@@ -109,7 +109,7 @@ classDiagram
     - `RuleInitializationService` implements `IHostedService`.
     - It's registered in the DI container in `Program.cs` via `AddHostedService<RuleInitializationService>()`.
     - On application start, the `StartAsync` method of `RuleInitializationService` is called.
-    - Inside `StartAsync`, it uses the injected `IRuleLoaderOrchestrator` to load all rules and then uses the injected `IRuleRepository` to store them.
+    - Inside `StartAsync`, it uses the injected `IRuleLoaderOrchestrator` to load all rules and then uses the injected `IRuleMetadataIndexRepository` to store them.
 - **Benefits**:
     - Ensures that rules are loaded and the repository is populated as soon as the application is ready.
     - Decouples the initialization logic from `Program.cs`'s `Main` method, leading to cleaner startup code.
@@ -133,9 +133,9 @@ classDiagram
 #### 2. In-Memory Repository Pattern
 - **Purpose**: To provide a centralized, in-memory store for `AgentRule` metadata.
 - **Mechanism**:
-    - `IRuleRepository` defines the contract for rule storage and retrieval.
+    - `IRuleMetadataIndexRepository` defines the contract for rule storage and retrieval.
     - `InMemoryRuleRepository` implements this using a `ConcurrentDictionary` for thread-safe storage.
-    - Provides methods to add rules and retrieve them (e.g., by ID, get all).
+    - Provides methods to add rule metadata and retrieve them (e.g., by ID, get all).
 - **Benefits**:
     - Fast access to rule metadata.
     - Decouples rule consumers from the loading process.
@@ -149,7 +149,7 @@ classDiagram
     - MCP services are added via `builder.Services.AddMcpServer().WithStdioServerTransport().WithToolsFromAssembly()`.
     - Tool methods are defined in a static class (`RuleProviderTools`) within the `AgentRulesHub.Mcp` namespace.
     - Tools are decorated with `[McpServerToolType]` (for the class) and `[McpServerTool]` (for methods).
-    - Dependencies for tools (like `IRuleRepository`) are injected using `[FromServices]` attribute on parameters.
+    - Dependencies for tools (like `IRuleMetadataIndexRepository`) are injected using `[FromServices]` attribute on parameters.
     - The application runs as a persistent server via `await builder.Build().RunAsync();`.
 - **Benefits**:
     - Standardized way to expose services to AI agents or other MCP-compatible clients.
@@ -189,15 +189,15 @@ classDiagram
 6.  **Configuration.RuleSourceOptions**: Configuration object (from `AgentRulesHub.Configuration` namespace) for a single rule source, specifying the `LoaderType` (e.g., "YamlFile") and loader-specific `Settings` (e.g., "Path" for `YamlRuleLoader`). Instances of this are typically part of `Configuration.RuleSourcesOptions`.
 7.  **Configuration.RuleSourcesOptions**: A container model (from `AgentRulesHub.Configuration` namespace), typically bound from `appsettings.json` (e.g., from a "RuleSources" section). It holds a `List<Configuration.RuleSourceOptions>` representing all configured rule sources.
 8.  **IRuleLoaderOrchestrator (`RuleLoaderOrchestrator`)**: Manages multiple `IRuleLoader` instances. It receives a `List<Configuration.RuleSourceOptions>` (obtained from `Configuration.RuleSourcesOptions` after configuration binding in `Program.cs`). For each `Configuration.RuleSourceOptions` in the list, it uses `options.LoaderType` by calling `loader.CanHandle(options.LoaderType)` on available loaders to select the correct one and initiate the loading process.
-9.  **IRuleRepository (`InMemoryRuleRepository`)**: Stores the `AgentRule` metadata. Provides methods for adding and retrieving rules.
-10. **RuleInitializationService**: An `IHostedService` that orchestrates the initial loading of rules into the `IRuleRepository` at application startup using the `IRuleLoaderOrchestrator`.
-11. **RuleProviderTools (in `AgentRulesHub.Mcp`)**: Static class containing MCP tool methods (`GetRulesByLanguageAsync`, `GetRuleContentByIdAsync`). Uses `IRuleRepository`.
+9.  **IRuleMetadataIndexRepository (`InMemoryRuleRepository`)**: Stores the `AgentRule` metadata. Provides methods for adding and retrieving rule metadata.
+10. **RuleInitializationService**: An `IHostedService` that orchestrates the initial loading of rules into the `IRuleMetadataIndexRepository` at application startup using the `IRuleLoaderOrchestrator`.
+11. **RuleProviderTools (in `AgentRulesHub.Mcp`)**: Static class containing MCP tool methods (`GetRuleContentByIdAsync`, `GetAllRulesMetadataAsync`). Uses `IRuleMetadataIndexRepository`.
 12. **MCP Server Framework (via `ModelContextProtocol` NuGet)**: Handles hosting, transport (StdIO), and tool discovery/invocation. Configured in `Program.cs`.
 
 ## Critical Implementation Paths
 1.  **Rule Metadata Loading (via Background Service)**:
-    Application Start -> `IHostedService` (`RuleInitializationService`) -> `IRuleLoaderOrchestrator` -> (uses `IOptions<Configuration.RuleSourcesOptions>`) -> (for each `Configuration.RuleSourceOptions`, selects using `IRuleLoader.CanHandle(options.LoaderType)`) `IRuleLoader` (e.g., `YamlRuleLoader`) -> `IRuleParser` (e.g., `YamlRuleParser`) -> `AgentRule` (metadata + `FileSource`) -> `IRuleRepository`.
+    Application Start -> `IHostedService` (`RuleInitializationService`) -> `IRuleLoaderOrchestrator` -> (uses `IOptions<Configuration.RuleSourcesOptions>`) -> (for each `Configuration.RuleSourceOptions`, selects using `IRuleLoader.CanHandle(options.LoaderType)`) `IRuleLoader` (e.g., `YamlRuleLoader`) -> `IRuleParser` (e.g., `YamlRuleParser`) -> `AgentRule` (metadata + `FileSource`) -> `IRuleMetadataIndexRepository`.
 2.  **Rule Content Retrieval (On-Demand via `AgentRule.Source`)**:
-    Client (e.g., `RuleProviderTools`) requests rule from `IRuleRepository` (already populated) -> Gets `AgentRule` -> Calls `agentRule.Source.GetRuleContentAsync()` -> `FileSource.GetRuleContentAsync()` reads and deserializes the specific rule content from the YAML file.
+    Client (e.g., `RuleProviderTools`) requests rule from `IRuleMetadataIndexRepository` (already populated) -> Gets `AgentRule` -> Calls `agentRule.Source.GetRuleContentAsync()` -> `FileSource.GetRuleContentAsync()` reads and deserializes the specific rule content from the YAML file.
 3.  **MCP Tool Invocation**:
-    MCP Client sends request -> MCP Server Framework (StdIO transport) -> Dispatches to `RuleProviderTools` method -> `RuleProviderTools` method uses injected `IRuleRepository` -> `IRuleRepository` interacts with in-memory store (and potentially `AgentRule.Source` for content) -> Response sent back to MCP Client.
+    MCP Client sends request -> MCP Server Framework (StdIO transport) -> Dispatches to `RuleProviderTools` method -> `RuleProviderTools` method uses injected `IRuleMetadataIndexRepository` -> `IRuleMetadataIndexRepository` interacts with in-memory store (and potentially `AgentRule.Source` for content) -> Response sent back to MCP Client.

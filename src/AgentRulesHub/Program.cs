@@ -35,7 +35,7 @@ public class Program
         builder.Services.AddSingleton<IRuleParser, YamlRuleParser>();
         builder.Services.AddSingleton<IRuleLoader, YamlRuleLoader>();
         builder.Services.AddSingleton<IRuleLoaderOrchestrator, RuleLoaderOrchestrator>();
-        builder.Services.AddSingleton<IRuleRepository, InMemoryRuleRepository>();
+        builder.Services.AddSingleton<IRuleMetadataIndexRepository, InMemoryRuleRepository>();
         builder.Services.AddHostedService<RuleInitializationService>();
 
         // Add MCP Server services

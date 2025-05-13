@@ -17,7 +17,7 @@ src/AgentRulesHub/
 │   ├── IRuleLoader.cs
 │   ├── IRuleParser.cs
 │   ├── IRuleLoaderOrchestrator.cs
-│   └── IRuleRepository.cs
+│   └── IRuleMetadataIndexRepository.cs
 ├── Models/
 │   ├── AgentRule.cs
 │   ├── RuleSource.cs

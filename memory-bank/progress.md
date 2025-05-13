@@ -16,8 +16,8 @@
     *   `IRuleLoaderOrchestrator` interface defined ✅
     *   `RuleLoaderOrchestrator` service implemented ✅
 4.  **Rule Metadata Repository**:
-    *   `IRuleRepository` interface defined ✅
-    *   `InMemoryRuleRepository` service implemented ✅
+    *   `IRuleMetadataIndexRepository` interface defined (renamed from `IRuleRepository`) ✅
+    *   `InMemoryRuleRepository` service implemented (updated to implement new interface) ✅
 5.  **Configuration Management**:
     *   `RuleSourcesOptions` model created for `appsettings.json` binding ✅
     *   `appsettings.json` created and configured for rule sources ✅
@@ -25,24 +25,33 @@
     *   `.csproj` updated with configuration NuGet packages and file copy settings ✅
 6.  **MCP Server Implementation**:
     *   Added `ModelContextProtocol` NuGet package ✅
-    *   Created `RuleProviderTools.cs` with `GetRulesByLanguageAsync` and `GetRuleContentByIdAsync` methods ✅
-    *   Updated `Program.cs` to host MCP server using `StdioServerTransport` and `WithToolsFromAssembly` ✅
+    *   Updated `RuleProviderTools.cs` to include `GetRuleContentByIdAsync` and `GetAllRulesMetadataAsync` methods, and removed `GetRulesByLanguageAsync` (updated to use `IRuleMetadataIndexRepository`) ✅
+    *   Updated `Program.cs` to host MCP server using `StdioServerTransport` and `WithToolsFromAssembly` (DI updated for `IRuleMetadataIndexRepository`) ✅
     *   Removed console demonstration logic from `Program.cs` ✅
 7.  **Demonstration**:
     *   Sample rule file (`sample-rule.yaml`) created ✅
     *   (MCP server functionality replaces previous console demonstration)
 
 ## Project Evolution
+### Phase 3.7: Refined MCP Tools (Completed)
+- Removed `GetRulesByLanguageAsync` from `RuleProviderTools.cs`. ✅
+- Ensured `GetAllRulesMetadataAsync` and `GetRuleContentByIdAsync` are the active tools. ✅
+- Updated memory bank files (`activeContext.md`, `systemPatterns.md`, `progress.md`). ✅
+
+### Phase 3.6: Added Get All Rules MCP Tool (Completed)
+- Added `GetAllRulesMetadataAsync` tool to `RuleProviderTools.cs`. ✅
+- Updated memory bank files (`activeContext.md`, `systemPatterns.md`, `progress.md`). ✅
+
 ### Phase 1: Data Model & Basic Parsing Foundation
 - Created initial project structure ✅
 - Implemented core models (`AgentRule`, `RuleSource`, `FileSource`, `YamlRuleContent`) ✅
 - Implemented basic YAML parsing (`YamlRuleParser`, `IRuleParser`) ✅
 - Set up memory bank documentation ✅
 
-### Phase 2: Orchestrated Loading, In-Memory Storage & Configuration (Current)
+### Phase 2: Orchestrated Loading, In-Memory Storage & Configuration
 - Implemented `RuleSourceOptions` for flexible loader configuration ✅
 - Implemented `RuleLoaderOrchestrator` pattern (`IRuleLoaderOrchestrator`, `RuleLoaderOrchestrator`, updated `IRuleLoader` and `YamlRuleLoader`) ✅
-- Implemented `InMemoryRuleRepository` pattern (`IRuleRepository`, `InMemoryRuleRepository`) ✅
+- Implemented `InMemoryRuleRepository` pattern (`IRuleMetadataIndexRepository`, `InMemoryRuleRepository`) ✅
 - **Implemented configuration-driven rule sources**: ✅
     - Created `RuleSourcesOptions` for `appsettings.json`.
     - Created `appsettings.json` with rule source definitions.
@@ -54,14 +63,18 @@
 - Created example rule YAML file (`sample-rule.yaml`) ✅
 - Updated memory bank documentation ✅
 
-### Phase 3: MCP Server Integration (Completed)
+### Phase 3: MCP Server Integration
 - Integrated `ModelContextProtocol` for MCP server capabilities ✅
 - Exposed rule retrieval via MCP tools ✅
 - Updated `Program.cs` to run as a persistent MCP server ✅
 - Updated memory bank documentation for MCP changes ✅
 
+### Phase 3.5: Repository Refactoring (Completed)
+- Renamed `IRuleRepository` to `IRuleMetadataIndexRepository` and updated all method names and usages. ✅
+- Updated all relevant memory bank files (`systemPatterns.md`, `techContext.md`, `activeContext.md`, `progress.md`). ✅
+
 ### Phase 4: Testing & Refinements (Pending)
-- [ ] Unit tests for all new and existing components (including configuration loading and MCP Tools)
+- [ ] Unit tests for all new and existing components (including configuration loading and MCP Tools, ensuring mocks use `IRuleMetadataIndexRepository`)
 - [ ] Refine error handling and logging (MCP server now uses `Microsoft.Extensions.Logging` to stderr, review if further refinement needed)
 - [ ] Add XML documentation comments to public APIs (MCP tool descriptions are present)
 
@@ -76,13 +89,14 @@
 
 ## Current Status
 - AgentRulesHub now functions as an MCP server.
-- Rules are loaded at startup via `RuleInitializationService`.
-- Rule metadata and content can be queried via MCP tools:
-    - `GetRulesByLanguageAsync`
+- Rules are loaded at startup via `RuleInitializationService` (using `IRuleMetadataIndexRepository`).
+- Rule metadata and content can be queried via MCP tools (using `IRuleMetadataIndexRepository`):
     - `GetRuleContentByIdAsync`
+    - `GetAllRulesMetadataAsync`
 - Rule sources remain configurable via `appsettings.json`.
 - Rule content is loaded on-demand.
 - System is extensible for new rule loader types and potentially new MCP tools.
+- Repository interface is now `IRuleMetadataIndexRepository`.
 - Ready for testing of MCP server functionality and further refinements.
 
 ## Project Decisions
@@ -94,10 +108,12 @@
 2.  **Orchestration & Repository Decisions**:
     *   `RuleLoaderOrchestrator` to manage multiple `IRuleLoader`s ✅
     *   `RuleSourceOptions` for configuring loaders (with `LoaderType` and `Settings` dictionary) ✅
-    *   `InMemoryRuleRepository` for storing rule metadata ✅
+    *   `InMemoryRuleRepository` for storing rule metadata (implements `IRuleMetadataIndexRepository`) ✅
     *   Rule content to be loaded on-demand by `RuleSource.GetRuleContentAsync()` ✅
     *   Temporary loading of full rule content into `YamlRuleContent` during parsing by `YamlRuleParser` is acceptable ✅
-3.  **Configuration Decisions**:
+3.  **Repository Naming Decision**:
+    *   `IRuleRepository` renamed to `IRuleMetadataIndexRepository` for clarity. ✅
+4.  **Configuration Decisions**:
     *   Rule sources configured via `appsettings.json` using `RuleSourcesOptions` and `RuleSourceOptions` models ✅
     *   Paths in configuration are relative and resolved to absolute in `Program.cs` ✅
 4.  **Pending Decisions**:
