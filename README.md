@@ -55,6 +55,19 @@ Add the following configuration block to your MCP settings:
         *   **Important**: Replace `<path_to_your_rules_directory>` with the actual path to your rule definitions directory (e.g., `c:/my_rules_folder` or a relative path from where the MCP client is run if supported).
 *   `"transportType"`: The communication protocol. `stdio` is used for local IPC.
 
+**Note on Multiple Rule Sources:**
+You can configure multiple YAML file sources by adding more entries to the `RuleSources:Sources` array in the `env` configuration. Increment the index for each new source (e.g., `RuleSources:Sources:1:LoaderType`, `RuleSources:Sources:1:Settings:Path`, and so on).
+
+For example, to add a second YAML file source:
+```json
+"env": {
+  "RuleSources:Sources:0:LoaderType": "YamlFile",
+  "RuleSources:Sources:0:Settings:Path": "<path_to_first_rules_directory>",
+  "RuleSources:Sources:1:LoaderType": "YamlFile",
+  "RuleSources:Sources:1:Settings:Path": "<path_to_second_rules_directory>"
+}
+```
+
 ## Usage Examples
 
 Once configured, you can use MCP tools to interact with the AgentRulesHub server.
@@ -109,6 +122,14 @@ This would return a list of all rule metadata (ID, description, language, tags, 
 2. Run `dotnet build -c Release`.
 
 This will produce the `AgentRulesHub.dll` in the `src/AgentRulesHub/bin/Release/net8.0/` directory.
+
+## Recommendations for Users
+
+It is recommended to add the following to your custom instructions when using an agent that can interact with this MCP server:
+
+"For each task use the rules-hub MCP server to get rules metadata index and if there are rules relevant to the task read them and use them"
+
+This will help the agent leverage the rules provided by AgentRulesHub more effectively.
 
 ### Rule File Format
 Rules are defined in YAML files (e.g., `my-rule.yaml`) within the directory specified by `RuleSources:Sources:0:Settings:Path`.
