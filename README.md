@@ -9,6 +9,33 @@ Managing agent rules effectively can be challenging. Sharing rules across differ
 -   Providing a structured way to organize and access rules.
 -   Enabling agents to retrieve only the rules relevant to their current task, thus minimizing context length and improving efficiency.
 
+## Task Flow
+
+This section describes the typical flow of an AI agent interacting with the AgentRulesHub MCP server to retrieve and utilize rules for a given task.
+
+1.  **Task Initiation**: An agent (e.g., Cline) begins a new task.
+2.  **Retrieve Rule Index**: The agent queries the `rules-hub` MCP server using the `GetAllRulesMetadata` tool. This provides an index of all available rules, including their IDs, descriptions, languages, and tags.
+3.  **Identify Relevant Rules**: Based on the current task's context (e.g., programming language, keywords, objectives) and the metadata received, the agent analyzes the rule index to identify which rules are relevant.
+4.  **Retrieve Rule Content**: If relevant rules are identified, the agent uses the `GetRuleContentById` tool for each relevant rule ID to fetch its specific content.
+5.  **Utilize Rules**: The agent incorporates the content of the retrieved rules to guide its actions, improve its output, or ensure adherence to specific guidelines for the task at hand.
+
+```mermaid
+sequenceDiagram
+    participant Agent
+    participant RulesHubServer as "rules-hub MCP Server"
+
+    Agent->>RulesHubServer: 1. Request: GetAllRulesMetadata
+    RulesHubServer-->>Agent: 2. Response: Rules Index (Metadata)
+    Agent->>Agent: 3. Analyze Task & Identify Relevant Rules
+    alt Relevant Rules Found
+        loop For Each Relevant Rule
+            Agent->>RulesHubServer: 4. Request: GetRuleContentById (ruleId)
+            RulesHubServer-->>Agent: 5. Response: Rule Content
+        end
+    end
+    Agent->>Agent: 6. Utilize Rule Content for Task
+```
+
 ## Features
 
 -   **Dynamic Rule Retrieval**: Access rules based on language or ID.
