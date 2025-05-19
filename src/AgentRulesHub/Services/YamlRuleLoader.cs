@@ -42,7 +42,7 @@ public class YamlRuleLoader : IRuleLoader
             throw new DirectoryNotFoundException($"Directory not found: {folderPath}");
         }
 
-        var yamlFiles = Directory.GetFiles(folderPath, "*.yaml", SearchOption.TopDirectoryOnly);
+        var yamlFiles = Directory.GetFiles(folderPath, "*.yaml", SearchOption.AllDirectories);
         var rules = new List<AgentRule>();
 
         foreach (var file in yamlFiles)
