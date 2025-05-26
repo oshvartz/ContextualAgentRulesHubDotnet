@@ -1,6 +1,6 @@
 # AgentRulesHub MCP Server
 
-Note: this is dotnet version for the python version go to [ContextualAgentRulesHub](https://github.com/oshvartz/ContextualAgentRulesHub)
+**Note: this is dotnet implemenatation. main development in python can be found at [ContextualAgentRulesHub Repository](https://github.com/oshvartz/ContextualAgentRulesHub)**
 
 AgentRulesHub is an MCP (Model Context Protocol) server designed to manage and provide contextual rules for AI agents. It allows agents to dynamically retrieve rules based on various criteria, such as programming language or specific rule identifiers.
 
